@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from __future__ import absolute_import
+from __future__ import print_function
 
 import argparse
-import os
 import sys
 import vmprof
 
@@ -34,21 +34,22 @@ class FlameGraphPrinter:
         try:
             stats = vmprof.read_profile(profile)
         except Exception as e:
-            print("Fatal: could not read vmprof profile file '{}': {}".format(profile, e),
-                  file=sys.stderr)
+            print("Fatal: could not read vmprof profile file '{}': {}".format(profile, e), file=sys.stderr)
             return
         tree = stats.get_tree()
         self.print_tree(tree)
 
     def _walk_tree(self, parent, node, level, lines):
         if ':' in node.name:
-            block_type, funcname, *rest = node.name.split(':')
+            split = node.name.split(':')
+            funcname = split[1]
+            rest = split[2:]
             if len(rest) >= 2:
                 lineno = rest[0]
                 filename = rest[1].split('/')[-1]
                 funcname += ":{}:{}".format(filename, lineno)
             if parent:
-                current = parent + ';' +funcname
+                current = parent + ';' + funcname
             else:
                 current = funcname
         else:
