@@ -14,17 +14,6 @@ class FlameGraphPrinter:
     [1] http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html
     """
 
-    def __init__(self, prune_percent=0.1, prune_level=None):
-        # (float, Optional[float]) -> None
-        """
-        :param prune_level: Prune output of a profile stats node when the node is deeper
-            than this level down the call graph from the very top.
-        """
-        assert 0 <= prune_percent <= 100
-        assert prune_level is None or (0 <= prune_level <= 900)
-        self._prune_percent = prune_percent or 0.1
-        self._prune_level = prune_level or 900
-
     def show(self, profile):
         # (str) -> None
         """Read and display a vmprof profile file.
@@ -58,17 +47,13 @@ class FlameGraphPrinter:
         count = node.count
 
         level += 1
-        if level <= self._prune_level:
-            for c in node.children.values():
-                if c.count >= self._minimum_count:
-                    count -= c.count
-                    self._walk_tree(current, c, level, lines)
+        for c in node.children.values():
+            count -= c.count
+            self._walk_tree(current, c, level, lines)
 
         lines.append((current, count))
 
     def print_tree(self, tree):
-        total = float(tree.count)
-        self._minimum_count = total * self._prune_percent / 100.0
         lines = []
         self._walk_tree(None, tree, 0, lines)
         lines.sort()
@@ -79,19 +64,9 @@ class FlameGraphPrinter:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("profile")
-    parser.add_argument(
-        '--prune_level',
-        type=int,
-        default=None,
-        help='Prune output of a profile stats deeper than specified level.')
-    parser.add_argument(
-        '--prune_percent',
-        type=float,
-        default=0.1,
-        help='Prune output of a profile stats less than specified percent.')
     args = parser.parse_args()
 
-    pp = FlameGraphPrinter(args.prune_percent, args.prune_level)
+    pp = FlameGraphPrinter()
     pp.show(args.profile)
 
 
